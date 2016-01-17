@@ -1,0 +1,34 @@
+#!/usr/bin/ruby
+
+# Scrape the bitbucket page
+# 'What are the Bitbucket Cloud IP addresses I should use to configure my corporate firewall'
+# and extract the tables of CIDR ranges listed, in HTML format.
+# We are searching only for the rows of values, so other irrelevant
+# stuff on the webpage can be ignored.
+# You can put the output into a local webpage, or just compare cryptographic
+# hashes to see if the bitbucket.org networking has changed
+
+require 'nokogiri'
+require 'open-uri'
+
+CLOUDIPS="https://confluence.atlassian.com/bitbucket/what-are-the-bitbucket-cloud-ip-addresses-i-should-use-to-configure-my-corporate-firewall-343343385.html"
+
+doc=Nokogiri::HTML(open(CLOUDIPS))
+
+# There are currently (16 January 2016) two tables of IP ranges
+# for prior to 15 December 2015 and after
+# The two columns are for inbound bitbucket.org endpoints
+# and for POST webhooks (deprecated)
+
+doc.xpath("//table[@class='aui aui-table-interactive']/tbody/tr/td[@class='confluenceTd']").each { |item|
+  # They have stuff that isn't IP addresses in spans so cut them out
+  if (item.attributes().key?('colspan')) then
+     if (item.attributes()['colspan'].value == '2') then
+       next
+     else
+      puts item.to_s
+     end
+  else
+    puts item.to_s
+  end
+}
